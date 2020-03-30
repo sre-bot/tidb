@@ -139,7 +139,31 @@ func (s *testSuite2) TestShowErrors(c *C) {
 	tk.MustQuery("show errors").Check(testutil.RowsWithSep("|", "Error|1050|Table 'test.show_errors' already exists"))
 }
 
+<<<<<<< HEAD
 func (s *testSuite2) TestIssue3641(c *C) {
+=======
+func (s *testSuite5) TestShowGrantsPrivilege(c *C) {
+	tk := testkit.NewTestKit(c, s.store)
+	tk.MustExec("create user show_grants")
+	tk.MustExec("show grants for show_grants")
+	tk1 := testkit.NewTestKit(c, s.store)
+	se, err := session.CreateSession4Test(s.store)
+	c.Assert(err, IsNil)
+	c.Assert(se.Auth(&auth.UserIdentity{Username: "show_grants", Hostname: "%"}, nil, nil), IsTrue)
+	tk1.Se = se
+	err = tk1.QueryToErr("show grants for root")
+	c.Assert(err.Error(), Equals, executor.ErrDBaccessDenied.GenWithStackByArgs("show_grants", "%", mysql.SystemDB).Error())
+	// Test show grants for user with auth host name `%`.
+	tk2 := testkit.NewTestKit(c, s.store)
+	se2, err := session.CreateSession4Test(s.store)
+	c.Assert(err, IsNil)
+	c.Assert(se2.Auth(&auth.UserIdentity{Username: "show_grants", Hostname: "127.0.0.1", AuthUsername: "show_grants", AuthHostname: "%"}, nil, nil), IsTrue)
+	tk2.Se = se2
+	tk2.MustQuery("show grants")
+}
+
+func (s *testSuite5) TestIssue3641(c *C) {
+>>>>>>> 1142e65... privilege: fix user with `%` hostname can not show grants. (#15825)
 	tk := testkit.NewTestKit(c, s.store)
 	_, err := tk.Exec("show tables;")
 	c.Assert(err.Error(), Equals, plannercore.ErrNoDB.Error())
